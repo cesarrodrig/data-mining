@@ -1,7 +1,11 @@
-
 import csv
 from collections import defaultdict
 from datetime import datetime
+
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import matplotlib.colors as colors
 
 class Student(object):
     def __init__(self, id, registration_year):
@@ -83,21 +87,23 @@ def courses_that_help(students, target_course_code, min_support=0.0):
     passed, failed, n = get_support_counts(students, target_course_code)
     passed_support = []
     failed_support = []
-    n = float(n)
+    n = float(len(students))
     for course_code, count in passed.items():
         if count/n > min_support:
-            passed_support.append((course_code_to_name[course_code], count/n))
+            passed_support.append((course_code, count/n))
 
     for course_code, count in failed.items():
         if count/n > min_support:
-            failed_support.append((course_code_to_name[course_code], count/n))
+            failed_support.append((course_code, count/n))
 
-    passed_support = sorted(passed_support, key=lambda x: x[1], reverse=True)[:10]
-    failed_support = sorted(failed_support, key=lambda x: x[1], reverse=True)[:10]
+    passed_support = sorted(passed_support, key=lambda x: x[1], reverse=True)
+    failed_support = sorted(failed_support, key=lambda x: x[1], reverse=True)
 
-    print "To pass", course_code_to_name[target_course_code]
-    for course_name, support in passed_support:
-        print course_name, support
+    return passed_support, failed_support
 
+target_course_code = 581259
+passed_support, failed_support = courses_that_help(students, target_course_code, 0.05)
 
-courses_that_help(students, 581259)
+print "Top ten courses to pass", course_code_to_name[target_course_code]
+for course_code, support in passed_support[:10]:
+    print course_code_to_name[course_code], support
