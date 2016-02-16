@@ -67,30 +67,16 @@ def support(transactions, itemset):
     return float(supp_count) / len(transactions)
 
 def merge(itemset_a, itemset_b):
-    # both are sorted lists, so we can use merge_sort method
-    merged = []
-    a, b = 0, 0
-    while a < len(itemset_a) and b < len(itemset_b):
-        if itemset_a[a] < itemset_b[b]:
-            merged.append(itemset_a[a])
-            a += 1
-        elif itemset_a[a] > itemset_b[b]:
-            merged.append(itemset_b[b])
-            b += 1
-        else:
-            merged.append(itemset_b[b])
-            a += 1
-            b += 1
-
-    while a < len(itemset_a):
-        merged.append(itemset_a[a])
-        a += 1
-
-    while b < len(itemset_b):
-        merged.append(itemset_b[b])
-        b += 1
-
-    return merged
+    if itemset_a[-1] > itemset_b[-1]:
+        res = itemset_b[:]
+        res.append(itemset_a[-1])
+        return res
+    elif itemset_a[-1] < itemset_b[-1]:
+        res = itemset_a[:]
+        res.append(itemset_b[-1])
+        return res
+    else:
+        raise Exception("Item sets have different last elements")
 
 def generate(frequent):
 
@@ -101,6 +87,9 @@ def generate(frequent):
 
     index = 0
     while index < len(frequent):
+        while index < len(frequent) and frequent[index] == "BOUND":
+            index += 1
+        if index >= len(frequent): break
         first = frequent[index]
 
 
@@ -157,11 +146,10 @@ for i in range(3,5):
     start_time = time.time()
 
     combinations_high_supp = apriori(course_transactions, 0.1, i)
-    combinations_high_supp = filter(lambda a: a!="BOUND", combinations_high_supp)
     for comb in combinations_high_supp:
         print comb
     print len(combinations_high_supp), "combinations, %s seconds" % (time.time() - start_time)
 
-
-combinations_high_supp = apriori(course_transactions, 0.1, 10)
-print len(combinations_high_supp)
+start_time = time.time()
+combinations_high_supp = apriori(course_transactions, 0.04, 5)
+print len(combinations_high_supp), "combinations, %s seconds" % (time.time() - start_time)
