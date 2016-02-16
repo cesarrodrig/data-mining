@@ -24,7 +24,7 @@ class CourseRecord(object):
     def __init__(self, strings):
         super(CourseRecord, self).__init__()
         self.year_and_month = strings[0]
-        self.code = strings[1]
+        self.code = int(strings[1])
         self.name = strings[2]
         self.credits = strings[3]
         self.final_grade = int(strings[4])
@@ -107,7 +107,8 @@ def generate(frequent):
         index2 = index + 1
         while index2 < len(frequent) and frequent[index2] != "BOUND":
             second = frequent[index2]
-            candidates.append(merge(first, second))
+            merged = merge(first, second)
+            candidates.append(merged)
             index2 += 1
 
         index += 1
@@ -119,7 +120,6 @@ def apriori(transactions, min_support, k=99999):
 
     prev_result = []
     for i, result in enumerate(apriori_generator(transactions, min_support)):
-        result = filter(lambda a: a!="BOUND", result)
         if not result:
             return prev_result
         if i+1 == k:
@@ -135,9 +135,9 @@ def apriori_generator(transactions, min_support):
 
     freq_itemsets = filter(lambda item: support(transactions, set([item])) >= min_support, itemset)
     freq_itemsets = [[item] for item in freq_itemsets]
-
+    freq_itemsets = sorted(freq_itemsets, key=lambda x: x[0])
     while freq_itemsets:
-        yield freq_itemsets
+        yield filter(lambda a: a!="BOUND", freq_itemsets)
         start_time = time.time()
         candidate_itemsets = generate(freq_itemsets)
         end_time = time.time()
@@ -158,7 +158,8 @@ for i in range(3,5):
 
     combinations_high_supp = apriori(course_transactions, 0.1, i)
     combinations_high_supp = filter(lambda a: a!="BOUND", combinations_high_supp)
-    # print combinations_high_supp
+    for comb in combinations_high_supp:
+        print comb
     print len(combinations_high_supp), "combinations, %s seconds" % (time.time() - start_time)
 
 
