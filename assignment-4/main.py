@@ -52,7 +52,6 @@ with open(FILE_NAME, "rb") as csvfile:
 def support_count(transactions, itemset):
     if type(itemset) not in (list, set, tuple):
         raise Exception("Expected list or set, got %s" % type(itemset))
-    itemset = set(itemset)
 
     curr_set = reduce(lambda x, y: x.intersection(y), [inverted_index[item] for item in itemset])
     return len(curr_set)
@@ -61,7 +60,6 @@ def support_count(transactions, itemset):
 def support(transactions, itemset):
     if type(itemset) not in (list, set, tuple):
         raise Exception("Expected list or set, got %s" % type(itemset))
-    itemset = set(itemset)
 
     supp_count = support_count(transactions, itemset)
     return float(supp_count) / len(transactions)
@@ -85,6 +83,7 @@ def generate(frequent):
     if len(frequent) <= 1:
         return candidates
 
+    freq_index = frozenset([frozenset(l) for l in frequent])
     index = 0
     while index < len(frequent):
         while index < len(frequent) and frequent[index] == "BOUND":
@@ -97,7 +96,17 @@ def generate(frequent):
         while index2 < len(frequent) and frequent[index2] != "BOUND":
             second = frequent[index2]
             merged = merge(first, second)
-            candidates.append(merged)
+            all_in_freq = True
+
+            for comb in combinations(merged, len(merged)-1):
+                is_in_set = set(comb) in freq_index
+
+                if not is_in_set:
+                    all_in_freq = False
+                    break
+
+            if all_in_freq:
+                candidates.append(merged)
             index2 += 1
 
         index += 1
@@ -127,9 +136,7 @@ def apriori_generator(transactions, min_support):
     freq_itemsets = sorted(freq_itemsets, key=lambda x: x[0])
     while freq_itemsets:
         yield filter(lambda a: a!="BOUND", freq_itemsets)
-        start_time = time.time()
         candidate_itemsets = generate(freq_itemsets)
-        end_time = time.time()
         next_freq_itemsets = []
 
         for cand_itemset in candidate_itemsets:
