@@ -50,17 +50,11 @@ with open(FILE_NAME, "rb") as csvfile:
         students.append(student)
 
 def support_count(transactions, itemset):
-    if type(itemset) not in (list, set, tuple):
-        raise Exception("Expected list or set, got %s" % type(itemset))
-
     curr_set = reduce(lambda x, y: x.intersection(y), [inverted_index[item] for item in itemset])
     return len(curr_set)
 
 
 def support(transactions, itemset):
-    if type(itemset) not in (list, set, tuple):
-        raise Exception("Expected list or set, got %s" % type(itemset))
-
     supp_count = support_count(transactions, itemset)
     return float(supp_count) / len(transactions)
 
@@ -76,7 +70,7 @@ def merge(itemset_a, itemset_b):
     else:
         raise Exception("Item sets have different last elements")
 
-def generate(frequent):
+def generate_candidates(frequent):
 
     candidates = []
 
@@ -99,7 +93,7 @@ def generate(frequent):
             all_in_freq = True
 
             for comb in combinations(merged, len(merged)-1):
-                is_in_set = set(comb) in freq_index
+                is_in_set = frozenset(comb) in freq_index
 
                 if not is_in_set:
                     all_in_freq = False
@@ -136,27 +130,66 @@ def apriori_generator(transactions, min_support):
     freq_itemsets = sorted(freq_itemsets, key=lambda x: x[0])
     while freq_itemsets:
         yield filter(lambda a: a!="BOUND", freq_itemsets)
-        candidate_itemsets = generate(freq_itemsets)
+        candidate_itemsets = generate_candidates(freq_itemsets)
         next_freq_itemsets = []
 
-        for cand_itemset in candidate_itemsets:
-            if cand_itemset == "BOUND":
+        for i, cand_itemset in enumerate(candidate_itemsets):
+            if cand_itemset == "BOUND" and candidate_itemsets[i-1] != "BOUND":
                 next_freq_itemsets.append(cand_itemset)
-            elif support(transactions, cand_itemset) >= min_support:
+            elif cand_itemset != "BOUND" and support(transactions, cand_itemset) >= min_support:
                 next_freq_itemsets.append(cand_itemset)
 
         freq_itemsets = next_freq_itemsets
 
+def confidence(rule):
+    union = rule[0] | rule[1]
+    union_supp = support_count(None, union)
+    conseq_supp = support_count(None, rule[1])
+
+    return float(union_supp) / conseq_supp
+
+def generate_rules_of_all_itemsets(freq_itemsets, min_confidence):
+    rules = []
+    for freq_itemset in freq_itemsets:
+
+        """ GENERATING 1-CONSEQUENCE RULES"""
+        consequences = [[item] for item in freq_itemset]
+        freq_supp = support_count(None, freq_itemset)
+        freq_set = frozenset(freq_itemset)
+        next_consequences = []
+        for consequence in consequences:
+            disjoint = sorted(list(freq_set - set(consequence)))
+            conf = float(freq_supp) / float(support_count(None, disjoint))
+            if conf >= min_confidence:
+                rules.append((disjoint, consequence, conf))
+                next_consequences.append(consequence)
+        """ END """
+
+        consequences = next_consequences
+        k = len(freq_itemset)
+        m = len(consequences[0])
+        while k > m + 1:
+
+            candidates = generate_candidates(consequences)
+            consequences = []
+            for i, candidate in enumerate(candidates):
+                if candidate == "BOUND":
+                    consequences.append(candidate)
+                    continue
+
+                cand_set = frozenset(candidate)
+                disjoint = sorted(list(freq_set - cand_set))
+                conf = float(freq_supp) / float(support_count(None, disjoint))
+
+                if conf < min_confidence:
+                    continue
+
+                rules.append((disjoint, candidate, conf))
+                consequences.append(candidate)
+
+            k = len(freq_itemset)
+            m = len(consequences[0])
+
+    return rules
+
 course_transactions = [ student.all_courses() for student in students ]
-
-for i in range(3,5):
-    start_time = time.time()
-
-    combinations_high_supp = apriori(course_transactions, 0.1, i)
-    for comb in combinations_high_supp:
-        print comb
-    print len(combinations_high_supp), "combinations, %s seconds" % (time.time() - start_time)
-
-start_time = time.time()
-combinations_high_supp = apriori(course_transactions, 0.04, 5)
-print len(combinations_high_supp), "combinations, %s seconds" % (time.time() - start_time)
