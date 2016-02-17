@@ -193,3 +193,16 @@ def generate_rules_of_all_itemsets(freq_itemsets, min_confidence):
     return rules
 
 course_transactions = [ student.all_courses() for student in students ]
+
+for i in range(8,9):
+    start_time = time.time()
+
+    combinations_high_supp = apriori(course_transactions, 0.15, i)
+    print len(combinations_high_supp), "combinations, %s seconds" % (time.time() - start_time)
+
+rules = generate_rules_of_all_itemsets(combinations_high_supp, 0.0)
+
+for antecedent, consequence, conf in rules:
+    if 581325 in consequence:
+        print antecedent, "-->", consequence, "(%s)" % conf
+
