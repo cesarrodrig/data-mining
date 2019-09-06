@@ -92,7 +92,7 @@ def generate(lists):
         while index2 < len(lists):
             second = lists[index2]
 
-            if first[:-1] == second[:-1]:
+            if first[:-1] == second[:-1] and first[-1] != second[-1]:
                 response.append(union(first, second))
 
             index2 += 1
@@ -129,10 +129,6 @@ def apriori_generator(transactions, min_support):
             if supp_count >= min_support:
                 next_freq_itemsets.append(cand_itemset)
 
-
-        print len(next_freq_itemsets), "%s seconds" % (end_time - start_time)
-
-
         freq_itemsets = next_freq_itemsets
 
 
@@ -151,7 +147,9 @@ print "8.", len(two_combinations), "combinations"
 
 course_transactions = [ student.all_courses() for student in students ]
 
-for i in range(2,4):
+print course_transactions
+
+for i in range(2,2):
 
     start_time = time.time()
 
@@ -159,11 +157,11 @@ for i in range(2,4):
 
     print str(i+7) + ".", len(combinations_high_supp), "combinations, %s seconds" % (time.time() - start_time)
 
-for i in range(2,10):
+for i in range(7,7):
     start_time = time.time()
 
     combinations_high_supp = apriori(course_transactions, 0.1, i)
-
+    print combinations_high_supp
     print "17.", len(combinations_high_supp), "combinations, %s seconds" % (time.time() - start_time)
 
 
